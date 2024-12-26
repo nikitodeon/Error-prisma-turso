@@ -1,13 +1,17 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
+import { createClient } from "@libsql/client";
 
-const prismaClientSingleton = () => {
-  return new PrismaClient();
-};
+// Создаем подключение к Turso
+const libsql = createClient({
+  url: process.env.TURSO_DATABASE_URL as string, // URL из вашего .env
+  authToken: process.env.TURSO_AUTH_TOKEN as string, // Токен из вашего .env
+});
 
-declare global {
-  var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>;
-}
+// Настроим адаптер для работы с Turso
+const adapter = new PrismaLibSQL(libsql);
 
-export const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+// Инициализация Prisma Client с адаптером
+const prisma = new PrismaClient({ adapter });
 
-if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma;
+export { prisma };
